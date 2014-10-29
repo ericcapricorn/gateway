@@ -32,7 +32,7 @@ func loop() {
 		for j = 0; j < request.Header.PayloadLen; j++ {
 			body[j] = byte(j + 1)
 		}
-		old := time.Now()
+		old := time.Now().UTC()
 		request.Payload = body[:request.Header.PayloadLen]
 		err = common.Send(conn, common.NilContex, &request, common.DEV_WRITE_TIMEOUT)
 		if err != nil {
@@ -52,7 +52,7 @@ func loop() {
 			for j = 0; j < response.Header.PayloadLen; j++ {
 				common.Assert(response.Payload[j] == body[j], "check the response failed")
 			}
-			fmt.Println("request timeused:", request.Header.MsgId, old, time.Now())
+			fmt.Println("request timeused:", request.Header.MsgId, old, time.Now().UTC())
 		} else {
 			fmt.Println("Send Request to Device Failed")
 		}
