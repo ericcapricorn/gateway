@@ -6,9 +6,18 @@ import (
 	"time"
 	"zc-common-go/common"
 	log "zc-common-go/glog"
-	"zc-gateway/server"
+	"zc-gateway/device"
 	"zc-service-go"
 )
+
+type GateWayConfig struct {
+	deviceAddr string
+	devicePort string
+	appAddr    string
+	appPort    string
+	dmAddr     string
+	dmPort     string
+}
 
 type AppGatewayService struct {
 	// app connection manager
@@ -28,7 +37,7 @@ func NewAppGatewayService(dev *common.SafeMap, config *zc.ZServiceConfig) *AppGa
 
 	// forward request and wait the device response
 	service.Handle("forward", zc.ZServiceHandler(func(req *zc.ZMsg, resp *zc.ZMsg) {
-		handler.handleRequest(req, resp)
+		handler.handleForwardRequest(req, resp)
 	}))
 	return service
 }
@@ -44,22 +53,25 @@ func Monitor(devs *common.SafeMap) {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	devConnManager := common.NewSafeMap()
-	devManager := server.NewDevicePKManager("192.168.1.114:5354", "zc-dm")
+	config := GateWayConfig{dmAddr: "localhost", dmPort: "7373", deviceAddr: "localhost",
+		devicePort: "8384", appAddr: "localhost", appPort: "9394"}
+	// outer device service dependency
+	devManager := server.NewDevicePKManager(config.dmAddr+":"+config.dmPort, "zc-dm")
 	if devConnManager == nil || devManager == nil {
 		log.Fatal("device connection manager and device manager failed")
 		return
 	}
+
 	// device gateway server start
 	deviceServer := server.NewDeviceGatewayServer(devConnManager, devManager)
 	if deviceServer == nil {
 		log.Fatal("new device gateway server failed")
 		return
 	}
-	go deviceServer.Start("192.168.1.114:8384")
+	go deviceServer.Start(config.deviceAddr + ":" + config.devicePort)
 	go Monitor(devConnManager)
-
 	// app gateway service start
-	var serverConfig = &zc.ZServiceConfig{Port: "9394"}
+	var serverConfig = &zc.ZServiceConfig{Port: config.appPort}
 	appService := NewAppGatewayService(devConnManager, serverConfig)
 	if appService == nil {
 		log.Fatal("new app gateway service failed")

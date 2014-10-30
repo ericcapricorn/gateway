@@ -4,14 +4,30 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 	"zc-common-go/common"
 )
 
 var i int
 
+func test_wait_routine(wait *sync.WaitGroup) {
+	wait.Done()
+}
+
+func test_wait_group() {
+	var wait sync.WaitGroup
+	wait.Add(10)
+	for i := 0; i < 10; i++ {
+		go test_wait_routine(&wait)
+	}
+	fmt.Println("wait")
+	wait.Wait()
+	fmt.Println("exit succ")
+}
+
 // test close channel
-func test_close() (err error) {
+func test_channel_close() (err error) {
 	ch := make(chan int, 10)
 	go func() {
 		select {
@@ -34,6 +50,8 @@ func test_close() (err error) {
 }
 
 func main() {
+	test_wait_group()
+	return
 	err := test_panic(false)
 	if err != nil {
 		fmt.Println("fatal error:", err)
@@ -44,12 +62,12 @@ func main() {
 	fmt.Println("modify the panic error:", err)
 
 	// closed channel panic
-	err = test_close()
+	err = test_channel_close()
 	fmt.Println(err)
 
-	// timeout
+	// channel timeout
 	result := make(chan int, 60)
-	go test_channel(result)
+	go test_channel_timeout(result)
 
 	for i := 0; i < 10; i++ {
 		result <- 1
@@ -57,7 +75,7 @@ func main() {
 	}
 }
 
-func test_channel(result chan int) {
+func test_channel_timeout(result chan int) {
 	timer := time.After(time.Second * 5)
 	for {
 		select {

@@ -28,7 +28,6 @@ func loop() {
 	randKey := common.GenerateRandomKey(common.ZC_HS_MSG_LEN)
 	request.Header.MsgCode = common.ZC_CODE_HANDSHAKE_1
 	request.Header.PayloadLen = common.ZC_HS_MSG_LEN + common.ZC_HS_DEVICE_ID_LEN
-	//deviceId := "testing_" + strconv.Itoa(int(rand.Intn(5)))
 	deviceId := "zzzzzzzzzzzz"
 	fmt.Println("Generate random and id:", randKey, []byte(deviceId))
 	request.Payload = make([]byte, request.Header.PayloadLen)
